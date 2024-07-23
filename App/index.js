@@ -1,7 +1,7 @@
 // Filename: index.js
 // Combined code from all files
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -9,76 +9,89 @@ import {
   TextInput,
   Button,
   ScrollView,
-  ActivityIndicator,
   View,
+  FlatList,
+  ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
 import axios from 'axios';
 
-export default function App() {
-  const [hero, setHero] = useState('');
-  const [villain, setVillain] = useState('');
-  const [plot, setPlot] = useState('');
-  const [story, setStory] = useState('');
+const App = () => {
+  const [menu, setMenu] = useState([]);
+  const [order, setOrder] = useState([]);
+  const [name, setName] = useState('');
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  const generateStory = async () => {
-    setLoading(true);
-    try {
-      const response = await axios.post('http://apihub.p.appply.xyz:3300/chatgpt', {
-        messages: [
-          { role: 'system', content: 'You are a helpful assistant. Please provide answers for given requests.' },
-          {
-            role: 'user',
-            content: `Create a fairy tale with the hero: ${hero}, the villain: ${villain}, and the plot: ${plot}.`,
-          },
-        ],
-        model: 'gpt-4o',
-      });
+  useEffect(() => {
+    fetchMenu();
+  }, []);
 
-      const { data } = response;
-      setStory(data.response);
+  const fetchMenu = async () => {
+    setLoading(true);
+    // Simulate fetching menu from an API
+    try {
+      const menuData = [
+        { id: '1', name: 'Espresso', price: 3 },
+        { id: '2', name: 'Cappuccino', price: 4 },
+        { id: '3', name: 'Latte', price: 4.5 },
+        { id: '4', name: 'Mocha', price: 5 },
+      ];
+      setMenu(menuData);
     } catch (error) {
-      console.error('Error generating story:', error);
-      setStory('Sorry, there was an error generating your story.');
+      console.error('Error fetching menu:', error);
     } finally {
       setLoading(false);
     }
   };
 
+  const placeOrder = () => {
+    setLoyaltyPoints(loyaltyPoints + 1);
+    setOrder([]);
+    alert('Order placed successfully!');
+  };
+
+  const addToOrder = (item) => {
+    setOrder([...order, item]);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollView}>
-        <Text style={styles.title}>Fairy Tale Generator</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter the hero"
-          value={hero}
-          onChangeText={setHero}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Enter the villain"
-          value={villain}
-          onChangeText={setVillain}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Enter the plot"
-          value={plot}
-          onChangeText={setPlot}
-        />
-        <Button title="Generate Story" onPress={generateStory} />
+        <Text style={styles.title}>Coffee Shop</Text>
+        <Text style={styles.subtitle}>Menu</Text>
         {loading ? (
-          <ActivityIndicator size="large" color="#00ff00" style={styles.loading} />
+          <ActivityIndicator size="large" color="#00ff00" />
         ) : (
-          <View style={styles.storyBox}>
-            <Text style={styles.story}>{story}</Text>
-          </View>
+          <FlatList
+            data={menu}
+            renderItem={({ item }) => (
+              <View style={styles.menuItem}>
+                <Text style={styles.menuText}>
+                  {item.name} - ${item.price}
+                </Text>
+                <Button title="Add to Order" onPress={() => addToOrder(item)} />
+              </View>
+            )}
+            keyExtractor={(item) => item.id}
+          />
         )}
+        <Text style={styles.subtitle}>Order</Text>
+        {order.length === 0 ? (
+          <Text style={styles.emptyOrder}>No items in order</Text>
+        ) : (
+          order.map((item, index) => (
+            <Text key={index} style={styles.orderText}>
+              {item.name} - ${item.price}
+            </Text>
+          ))
+        )}
+        {order.length > 0 && <Button title="Place Order" onPress={placeOrder} />}
+        <Text style={styles.subtitle}>Loyalty Points: {loyaltyPoints}</Text>
       </ScrollView>
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -94,26 +107,30 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 16,
   },
-  input: {
+  subtitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginTop: 10,
+    marginBottom: 5,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     width: '100%',
     padding: 10,
-    borderRadius: 10,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    marginBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
   },
-  loading: {
-    marginTop: 20,
+  menuText: {
+    fontSize: 18,
   },
-  storyBox: {
-    marginTop: 20,
-    padding: 16,
-    borderRadius: 10,
-    backgroundColor: '#f9f9f9',
-    borderWidth: 1,
-    borderColor: '#ddd',
+  emptyOrder: {
+    fontStyle: 'italic',
   },
-  story: {
-    fontSize: 16,
+  orderText: {
+    fontSize: 18,
+    marginVertical: 3,
   },
 });
+
+export default App;
